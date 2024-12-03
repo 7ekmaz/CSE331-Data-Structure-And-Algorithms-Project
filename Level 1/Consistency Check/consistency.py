@@ -2,8 +2,6 @@ import argparse
 import xml.etree.ElementTree as ET
 import sys
 
-# "check_xml_consistency" and "fix_xml_consistency" functions can be used either from cmd or terminal
-
 
 # stack implementation
 class Stack:
