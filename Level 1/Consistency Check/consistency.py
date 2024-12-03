@@ -1,10 +1,41 @@
 import argparse
 import xml.etree.ElementTree as ET
 import sys
-import re
+
+# "check_xml_consistency" and "fix_xml_consistency" functions can be used either from cmd or terminal
 
 
-# 1. Parsing Command-Line Arguments
+# stack implementation
+class Stack:
+    def __init__(self):
+        self.items = []
+
+    def push(self, item):
+        self.items.append(item)
+
+    def pop(self):
+        if not self.is_empty():
+            return self.items.pop()
+        else:
+            raise IndexError("pop from empty stack")
+
+    def peek(self):
+        if not self.is_empty():
+            return self.items[-1]
+        else:
+            raise IndexError("peek from empty stack")
+
+    def is_empty(self):
+        return len(self.items) == 0
+
+    def size(self):
+        return len(self.items)
+
+
+# Stack operations' big O is mentioned at the end of the file
+
+
+# Parsing Command-Line Arguments
 def parse_arguments():
     """
     For command line use
@@ -21,72 +52,10 @@ def parse_arguments():
     parser.add_argument("-o", "--output", help="Output file for fixed XML")
     return parser.parse_args()
 
-    # sooooooooon
-    # def detect_malformed_tag(tag_content):
-    """
-    Detects if a tag contains a malformed XML tag and classifies the error.
-    Returns a string describing the error type or None if the tag is valid.
-    """
-    tag_content = tag_content.strip()
 
-    # Case 1: Opening tag missing '>'
-    if tag_content.startswith("<") and not tag_content.endswith(">"):
-        return "Missing_closing_angle"
-
-    # Case 2: Closing tag missing '>'
-    if tag_content.startswith("</") and not tag_content.endswith(">"):
-        return "Missing_closing_angle"
-
-    # Case 3: Opening tag missing '<'
-    if (
-        tag_content.endswith(">")
-        and not tag_content.startswith("<")
-        and not tag_content.startswith("</")
-    ):
-        return "Missing_opening_angle"
-
-    # Case 4: Closing tag missing '<'
-    if (
-        tag_content.endswith(">")
-        and tag_content.startswith("/")
-        and not tag_content.startswith("</")
-    ):
-        return "Missing_opening_angle"
-
-    # If none of the cases match, the tag is valid
-    return None
-
-
-def detect_invalid_tag(tag_content, line_num):
-    """
-    Checks if a tag has a valid name based on XML standards.
-    Returns an error message if invalid, otherwise None.
-
-    """
-    tag_pattern = re.compile(r"[a-zA-Z_][\w.-]*")  # Valid XML tag name pattern
-
-    is_closing = tag_content.startswith("/")
-    is_self_closing = tag_content.endswith("/")
-
-    # Remove leading '/' for closing tags or trailing '/' for self-closing tags
-    if is_closing:
-        tag_name = tag_content[1:]
-    elif is_self_closing:
-        tag_name = tag_content[:-1].strip()
-    else:
-        tag_name = tag_content.split()[0]
-
-    if not tag_pattern.fullmatch(tag_name):
-        return f"Invalid tag name detected: <{tag_content}>. Tag names must be valid identifiers."
-
-    return None
-
-
-# XML Consistency validator
 def check_xml_consistency(xml_lines):
-    stack = []  # Stack to track opened tags
-    unclosed_opening_tags = {}  # Dictionary to track line numbers for each opening tag
-    errors = []  # storing errors
+    stack = []  # Stack to track opened tags with line numbers
+    errors = []  # List to store errors
 
     for line_num, line in enumerate(xml_lines, start=1):
         line = line.strip()
@@ -94,39 +63,29 @@ def check_xml_consistency(xml_lines):
         start = line.find("<")
         while start != -1:
             end = line.find(">", start)
-            if end == -1:  # Malformed tag detected
-                errors.append(
-                    (
-                        line_num,
-                        "Malformed tag detected. Tag is incomplete or improperly formatted.",
-                    )
-                )
-                stack.pop()
-                break  # Stop further processing for this line
 
+            # Extract the tag content
             tag_content = line[start + 1 : end].strip()
-
-            invalid_tag_error = detect_invalid_tag(tag_content, line_num)
-            if invalid_tag_error:
-                errors.append((line_num, invalid_tag_error))
-                break  # Skip further processing of this malformed tag
 
             is_closing = tag_content.startswith("/")
             is_self_closing = tag_content.endswith("/")
             comment_tag = tag_content.startswith("!")
 
             if is_closing:
+                # Extract the tag name for closing tag
                 tag_name = tag_content[1:].split()[0]
                 matched = False
+
+                # Search for matching opening tag in the stack
                 for i in range(len(stack) - 1, -1, -1):
-                    stack_tag_name = stack[i]
+                    stack_tag_name, opening_line = stack[i]
                     if stack_tag_name == tag_name:
-                        stack.pop(i)  # Remove matched opening tag from stack
+                        stack.pop(i)  # Remove the matched opening tag from the stack
                         matched = True
                         break
 
                 if not matched:
-                    # If no match found, error with the current closing tag line
+                    # If no matching opening tag, log the error
                     errors.append(
                         (
                             line_num,
@@ -134,53 +93,111 @@ def check_xml_consistency(xml_lines):
                         )
                     )
 
-            elif is_self_closing:
-                # Pass it as it is self closing
+            elif is_self_closing or comment_tag:
+                # Ignore self-closing or comment tags as they don't affect xml structure
                 pass
-            elif comment_tag:
-                pass
+
             else:
-                #  opening tag
+                # opening tag, track it with its line number
                 tag_name = tag_content.split()[0]
-                stack.append(tag_name)
+                stack.append(
+                    (tag_name, line_num)
+                )  # used in order to track opening tag line number in case of many tags with the same name
 
-                # Track all opening tags and their line numbers
-                if tag_name not in unclosed_opening_tags:
-                    unclosed_opening_tags[tag_name] = []
-                unclosed_opening_tags[tag_name].append(line_num)
-
-            # next tag in line
+            # Look for the next tag in the line
             start = line.find("<", end)
 
-    # if stack is not empty
+    #  check if any opening tags are left unclosed
     while stack:
-        tag_name = stack.pop()
-        if tag_name in unclosed_opening_tags:
+        tag_name, opening_line = stack.pop()
+        errors.append(
+            (
+                opening_line,
+                f"<{tag_name}> has no closing tag.",
+            )
+        )
 
-            errors.append(
-                (
-                    unclosed_opening_tags[tag_name].pop(),
-                    f"<{tag_name}> has no closing tag",
-                )
-            )  # to be modifiedddddddd
-
-    # return if their exist any errors, and the errors
+    # return errors if exist and the list of errors
     return len(errors) == 0, errors
+
+
+def fix_xml_consistency(xml_lines, errors):
+    fixed_lines = xml_lines[:]
+    error_log = []
+
+    for line_num, error_msg in errors:
+        if "has no closing tag" in error_msg:
+            # Extract the tag name from the error message
+            tag_name = error_msg.split("<")[1].split(">")[0]
+
+            # Locate the line with the opening tag
+            open_tag_line = line_num - 1
+            for i in range(open_tag_line, len(fixed_lines)):
+                if f"<{tag_name}" in fixed_lines[i]:
+                    open_tag_line = i
+                    break
+
+            # Find the appropriate position to insert the closing tag
+            insertion_point = open_tag_line + 1
+            for i in range(open_tag_line + 1, len(fixed_lines)):
+                if (
+                    fixed_lines[i].strip().startswith("</")
+                    or "<" in fixed_lines[i].strip()
+                ):
+                    break
+                insertion_point = i + 1
+
+            fixed_lines.insert(
+                insertion_point,
+                f"</{tag_name}><!-- Error fixed: Added missing closing tag for <{tag_name}> -->\n",
+            )
+            error_log.append(
+                f"Added closing tag </{tag_name}> for <{tag_name}> starting on line {line_num}"
+            )
+
+        elif "Unexpected closing tag" in error_msg:
+            # Extract the tag name from the error message
+            tag_name = error_msg.split("</")[1].split(">")[0]
+
+            # Locate content before the closing tag
+            closing_tag_line = line_num - 1
+            content = fixed_lines[closing_tag_line].strip()
+            content_without_tag = content.replace(f"</{tag_name}>", "").strip()
+
+            if content_without_tag:  # Case with content
+                # Add an opening tag before the content
+                fixed_lines[closing_tag_line] = (
+                    f"<{tag_name}>{content_without_tag}</{tag_name}>"
+                )
+                error_log.append(
+                    f"Added missing opening tag <{tag_name}> on line {line_num} for existing closing tag."
+                )
+            else:  # Case without content
+                # Comment out the redundant closing tag
+                fixed_lines[closing_tag_line] = (
+                    f"<!-- {content} --><!-- Error fixed: Removed unexpected closing tag -->\n"
+                )
+                error_log.append(
+                    f"Removed redundant closing tag </{tag_name}> on line {line_num} with no associated content."
+                )
+
+    return fixed_lines, error_log
 
 
 def main():
     # Checking command-line arguments
-    if len(sys.argv) > 1:
-        args = parse_arguments()
-        xml_path = args.input
-    else:
-        print("No command-line arguments provided.")
-        xml_path = input("Enter the path to the XML file: ")
+    args = parse_arguments()  # Parse arguments from command line
+    xml_path = args.input  # Get the input XML file path
 
     # Validate XML file
-    with open(xml_path, "r") as file:
-        xml_lines = file.readlines()
+    try:
+        with open(xml_path, "r") as file:
+            xml_lines = file.readlines()  # Read XML file into lines
+    except FileNotFoundError:
+        print(f"Error: The file '{xml_path}' was not found.")
+        return
 
+    # Check XML consistency
     is_valid, errors = check_xml_consistency(xml_lines)
     if is_valid is None:
         return
@@ -193,6 +210,25 @@ def main():
         for line_num, error in errors:
             print(f"Error on line {line_num}: {error}")
 
+    # If the --fix flag (-f) is set, attempt to fix the errors
+    if args.fix:
+        fixed_lines, error_log = fix_xml_consistency(xml_lines, errors)
+
+        # Display applied fixes if any
+        if error_log:
+            print("\nFixes applied:")
+            for log in error_log:
+                print(log)
+
+        # If --output is specified, write the fixed XML to the output file
+        if args.output:
+            with open(args.output, "w") as output_file:
+                output_file.writelines(fixed_lines)
+            print(f"\nFixed XML saved to {args.output}")
+        else:
+            print("\nFixed XML (printed below):")
+            print("".join(fixed_lines))
+
 
 if __name__ == "__main__":
     main()
@@ -200,15 +236,97 @@ if __name__ == "__main__":
     # This idiom is essential for writing modular, reusable, and testable Python code. It separates the script's reusable logic from its executable logic
 
 
+# Time Complexity Explanation:
+#
+# The time complexity of the `check_xml_consistency` function depends on the operations
+# performed within the loops and the use of the stack.
+#
+#  Outer Loop (Line Iteration):
+#    The function iterates through each line in `xml_lines` using `enumerate`, which runs in O(n) time
+#    where `n` is the number of lines in the XML input. This loop processes each line once.
+#
+#  Inner Loop (Tag Parsing):
+#    Inside the outer loop, there is a while loop that scans for each tag within the current line.
+#    For each line, the `find` function is used to locate the positions of tags. In the worst case,
+#    the line could contain multiple tags, and the while loop will process each tag one by one. For
+#    a line with `m` tags, the `find` operation will be performed `m` times. However, we can simplify
+#    the complexity of the inner loop to O(L), where `L` is the maximum line length.
+#
+# Stack Operations:
+#    For each closing tag (`</tag>`), the function looks for a matching opening tag in the stack.
+#    In the worst case, the stack may contain all previously encountered opening tags, so finding
+#    a match involves iterating through the stack in reverse order, which can be as large as the number
+#    of tags processed so far.
+#
+# Remaining Stack Check:
+#    After processing all the lines, any remaining opening tags in the stack are checked for unclosed
+#    tags. This operation contributes O(k) time, where `k` is the number of tags.
+#
+# Overall Time Complexity:
+#    The outer loop runs O(n), where `n` is the number of lines. For each line, the inner loop operates
+#    in O(L) for tag parsing, and the stack operations contribute O(k) time.
+#
+# Final Big O Complexity:
+#    O(n * L)
+#    Where `n` is the number of lines in the XML, and `L` is the length of the longest line.
+
+
+# Time Complexity Explanation for fix_xml_consistency:
+
+# Iteration Over Errors:
+#    The function iterates through each error in the `errors` list. If there are `k` errors, this part will take O(k) time.
+
+# Finding and Inserting Closing Tags:
+#    For errors where a closing tag is missing, the function locates the appropriate line to insert the closing tag.
+#    This scan of the lines takes O(n) time, where `n` is the number of lines in the XML file. Inserting a closing tag
+#    into a list takes O(n) time, resulting in an O(n) time complexity for this operation.
+
+# Fixing Unexpected Closing Tags:
+#    For errors involving unexpected closing tags, the function searches for the content associated with the tag
+#    and either adds an opening tag or comments out a redundant closing tag. This scan also takes O(n) in the worst case.
+
+# Error Log Construction:
+#    Building the error log involves appending to a list, which is O(1) per operation and does not significantly affect
+#    the overall time complexity.
+
+# Overall Time Complexity:
+#    The function has a time complexity of O(k * n), where:
+#    - `k` is the number of errors.
+#    - `n` is the number of lines in the XML file.
+
+
 """
-Iterating over n lines: O(n).
-Processing t tags:
--Tag parsing and stack operations: O(t).
--Regex matching for invalid tags: O(t⋅l).
-Cleanup for unmatched tags: O(k), which is at most O(t).
-Total complexity is: O(n+t⋅l)
-n: Number of lines in the input.
-t: Total number of tags across all lines.
-l: Average length of tags.
+Stack Operations
+
+
+push(item):
+Description: Adds an item to the top of the stack using append().
+Time Complexity: O(1)
+Reason:  The append() operation in Python lists is an amortized constant time operation. It adds the item to the end of the list without needing to shift other elements.
+
+
+pop():
+Description: Removes and returns the top item of the stack.
+Time Complexity: O(1)
+Reason: The pop() operation on a list removes and returns the last item of the list, which is done in constant time as there is no need to shift elements.
+
+
+peek():
+Description: Returns the top item of the stack without removing it.
+Time Complexity: O(1)
+Reason: Accessing the last element of a list (self.items[-1]) is done in constant time because no elements need to be shifted.
+
+
+is_empty():
+Description: Checks if the stack is empty.
+Time Complexity: O(1)
+Reason: Checking whether the list is empty using len(self.items) == 0 is a constant-time operation since the length of the list is already stored and easily accessible.
+
+
+size():
+Description: Returns the number of items in the stack.
+Time Complexity: O(1)
+Reason: The len() function in Python is a constant-time operation that simply returns the size of the list without needing to traverse it.
+
 
 """
