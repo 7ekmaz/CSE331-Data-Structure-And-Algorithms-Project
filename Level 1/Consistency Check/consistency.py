@@ -3,36 +3,6 @@ import xml.etree.ElementTree as ET
 import sys
 
 
-# stack implementation
-class Stack:
-    def __init__(self):
-        self.items = []
-
-    def push(self, item):
-        self.items.append(item)
-
-    def pop(self):
-        if not self.is_empty():
-            return self.items.pop()
-        else:
-            raise IndexError("pop from empty stack")
-
-    def peek(self):
-        if not self.is_empty():
-            return self.items[-1]
-        else:
-            raise IndexError("peek from empty stack")
-
-    def is_empty(self):
-        return len(self.items) == 0
-
-    def size(self):
-        return len(self.items)
-
-
-# Stack operations' big O is mentioned at the end of the file
-
-
 # Parsing Command-Line Arguments
 def parse_arguments():
     """
@@ -52,7 +22,7 @@ def parse_arguments():
 
 
 def check_xml_consistency(xml_lines):
-    stack = []  # Stack to track opened tags with line numbers
+    tag_list = []  # List to track opened tags with line numbers
     errors = []  # List to store errors
 
     for line_num, line in enumerate(xml_lines, start=1):
@@ -75,10 +45,10 @@ def check_xml_consistency(xml_lines):
                 matched = False
 
                 # Search for matching opening tag in the stack
-                for i in range(len(stack) - 1, -1, -1):
-                    stack_tag_name, opening_line = stack[i]
-                    if stack_tag_name == tag_name:
-                        stack.pop(i)  # Remove the matched opening tag from the stack
+                for i in range(len(tag_list) - 1, -1, -1):
+                    list_tag_name, opening_line = tag_list[i]
+                    if list_tag_name == tag_name:
+                        tag_list.pop(i)  # Remove the matched opening tag from the stack
                         matched = True
                         break
 
@@ -98,7 +68,7 @@ def check_xml_consistency(xml_lines):
             else:
                 # opening tag, track it with its line number
                 tag_name = tag_content.split()[0]
-                stack.append(
+                tag_list.append(
                     (tag_name, line_num)
                 )  # used in order to track opening tag line number in case of many tags with the same name
 
@@ -106,8 +76,8 @@ def check_xml_consistency(xml_lines):
             start = line.find("<", end)
 
     #  check if any opening tags are left unclosed
-    while stack:
-        tag_name, opening_line = stack.pop()
+    while tag_list:
+        tag_name, opening_line = tag_list.pop()
         errors.append(
             (
                 opening_line,
@@ -250,14 +220,14 @@ if __name__ == "__main__":
 #    a line with `m` tags, the `find` operation will be performed `m` times. However, we can simplify
 #    the complexity of the inner loop to O(L), where `L` is the maximum line length.
 #
-# Stack Operations:
-#    For each closing tag (`</tag>`), the function looks for a matching opening tag in the stack.
-#    In the worst case, the stack may contain all previously encountered opening tags, so finding
-#    a match involves iterating through the stack in reverse order, which can be as large as the number
+#
+#    For each closing tag (`</tag>`), the function looks for a matching opening tag in the list.
+#    In the worst case, the list may contain all previously encountered opening tags, so finding
+#    a match involves iterating through the list in reverse order, which can be as large as the number
 #    of tags processed so far.
 #
-# Remaining Stack Check:
-#    After processing all the lines, any remaining opening tags in the stack are checked for unclosed
+# Remaining list Check:
+#    After processing all the lines, any remaining opening tags in the list are checked for unclosed
 #    tags. This operation contributes O(k) time, where `k` is the number of tags.
 #
 # Overall Time Complexity:
@@ -291,40 +261,3 @@ if __name__ == "__main__":
 #    The function has a time complexity of O(k * n), where:
 #    - `k` is the number of errors.
 #    - `n` is the number of lines in the XML file.
-
-
-"""
-Stack Operations
-
-
-push(item):
-Description: Adds an item to the top of the stack using append().
-Time Complexity: O(1)
-Reason:  The append() operation in Python lists is an amortized constant time operation. It adds the item to the end of the list without needing to shift other elements.
-
-
-pop():
-Description: Removes and returns the top item of the stack.
-Time Complexity: O(1)
-Reason: The pop() operation on a list removes and returns the last item of the list, which is done in constant time as there is no need to shift elements.
-
-
-peek():
-Description: Returns the top item of the stack without removing it.
-Time Complexity: O(1)
-Reason: Accessing the last element of a list (self.items[-1]) is done in constant time because no elements need to be shifted.
-
-
-is_empty():
-Description: Checks if the stack is empty.
-Time Complexity: O(1)
-Reason: Checking whether the list is empty using len(self.items) == 0 is a constant-time operation since the length of the list is already stored and easily accessible.
-
-
-size():
-Description: Returns the number of items in the stack.
-Time Complexity: O(1)
-Reason: The len() function in Python is a constant-time operation that simply returns the size of the list without needing to traverse it.
-
-
-"""
