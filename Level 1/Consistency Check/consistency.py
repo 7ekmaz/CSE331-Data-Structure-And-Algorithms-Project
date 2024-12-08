@@ -132,23 +132,14 @@ def fix_xml_consistency(xml_lines, errors):
             content = fixed_lines[closing_tag_line].strip()
             content_without_tag = content.replace(f"</{tag_name}>", "").strip()
 
-            if content_without_tag:  # Case with content
-                # Add an opening tag before the content
-                fixed_lines[closing_tag_line] = (
-                    f"<{tag_name}>{content_without_tag}</{tag_name}>"
-                )
-                error_log.append(
-                    f"Added missing opening tag <{tag_name}> on line {line_num} for existing closing tag."
-                )
-            else:  # Case without content
-                # Comment out the redundant closing tag
-                fixed_lines[closing_tag_line] = (
-                    f"<!-- {content} --><!-- Error fixed: Removed unexpected closing tag -->\n"
-                )
-                error_log.append(
-                    f"Removed redundant closing tag </{tag_name}> on line {line_num} with no associated content."
-                )
-
+            
+             # Add an opening tag before the content
+            fixed_lines[closing_tag_line] = (
+            f"<{tag_name}>{content_without_tag}</{tag_name}>"
+            )
+            error_log.append(
+            f"Added missing opening tag <{tag_name}> on line {line_num} for existing closing tag."
+            )
     return fixed_lines, error_log
 
 
