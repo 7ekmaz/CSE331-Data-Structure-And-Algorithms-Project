@@ -135,7 +135,7 @@ def visualize_graph(output_file, graph):
         for neighbor in graph.get_neighbors(node):
             G.add_edge(node, neighbor)
 
-    pos = nx.spring_layout(G, seed=42)
+    pos = nx.circular_layout(G)
     nx.draw(
         G,
         pos,
