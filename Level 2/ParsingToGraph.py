@@ -56,6 +56,7 @@ def parse_xml_to_graph(input_file):
     """
 
     graph = Graph()
+    names = {}
     posts = {}
     user_topics = {}
     post_topics = []
@@ -80,9 +81,13 @@ def parse_xml_to_graph(input_file):
         elif line.startswith("<id>") and current_user is None:
             current_user = line.replace("<id>", "").replace("</id>", "").strip()
             graph.add_node(current_user)
+        
         elif line.startswith("<post>"):
             body_content = ""
             curr_topics = []
+
+        elif line.startswith("<name>") :
+            names[current_user] = line.replace("<name>", "").replace("</name>", "").strip()
 
         elif line.startswith("<body>"):
             inside_body = True
@@ -130,7 +135,7 @@ def parse_xml_to_graph(input_file):
                 user_topics[current_user] = current_topics
             current_user = None
 
-    return graph, posts, user_topics ,post_topics
+    return graph, posts, user_topics , post_topics, names
 
 
 
@@ -173,7 +178,7 @@ output_file = "social-network-graph.jpg"
 
 
 # Parse the XML to graph
-graph, posts, user_topics = parse_xml_to_graph(input_file)
+graph, posts, user_topics, post_topics, names = parse_xml_to_graph(input_file)
 
 
 # Visualization
@@ -182,3 +187,5 @@ visualize_graph(output_file, graph)
 
 print(posts)
 print(user_topics)
+print(post_topics)
+print(names)
