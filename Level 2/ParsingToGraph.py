@@ -35,7 +35,7 @@ class Graph:
         for neighbors in self.adjacency_list.values():
             in_degree += neighbors.count(node)
         return in_degree
-
+    
     def get_followers(self, node):
         list_of_in_degree = []
         for nodes, neighbors in self.adjacency_list.items():
@@ -56,17 +56,15 @@ class Graph:
 def parse_xml_to_graph(input_file):
     """
     Parses the input XML file, creating a social network graph where each user is a node, and edges represent followers.
-    Posts and Topics: As the XML is parsed, the posts and topics for each user are stored in the posts and user_topics dictionaries .
-    Additionally, The topics for each post are mentioned in list "post_topics" to be used in search.
+    Posts and Topics: As the XML is parsed, the posts and topics for each user are stored in the posts and user_topics dictionaries to be used in search
     The graph is built by adding nodes for users and edges for follower relationships.
 
     """
 
     graph = Graph()
-    names = {}
     posts = {}
     user_topics = {}
-    post_topics = []
+    names = {}
 
     with open(input_file, "r") as file:
         lines = file.readlines()
@@ -88,13 +86,10 @@ def parse_xml_to_graph(input_file):
         elif line.startswith("<id>") and current_user is None:
             current_user = line.replace("<id>", "").replace("</id>", "").strip()
             graph.add_node(current_user)
-        
-        elif line.startswith("<post>"):
-            body_content = ""
-            curr_topics = []
 
         elif line.startswith("<name>") :
             names[current_user] = line.replace("<name>", "").replace("</name>", "").strip()
+             
 
         elif line.startswith("<body>"):
             inside_body = True
@@ -108,18 +103,9 @@ def parse_xml_to_graph(input_file):
             inside_topic = True
             topic_content = ""
 
-
         elif line.startswith("</topic>") and inside_topic:
             inside_topic = False
             current_topics.append(topic_content.strip())
-            curr_topics.append(topic_content.strip())
-        #Store the topics as list for each post
-        elif line.startswith("</post>"):
-            if curr_topics:
-                post_topics.append({
-                'body': body_content.strip(),
-                'topics': curr_topics
-            })
 
         elif inside_topic:
             topic_content += line + " "
@@ -130,8 +116,6 @@ def parse_xml_to_graph(input_file):
         elif line.startswith("<id>") and current_user is not None:
             follower_id = line.replace("<id>", "").replace("</id>", "").strip()
             followers.append(follower_id)
-        
-       
 
         elif line.startswith("</user>"):
             for follower in followers:
@@ -142,8 +126,7 @@ def parse_xml_to_graph(input_file):
                 user_topics[current_user] = current_topics
             current_user = None
 
-    return graph, posts, user_topics , post_topics, names
-
+    return graph, posts, user_topics , names
 
 
 def visualize_graph(output_file, graph):
@@ -177,22 +160,3 @@ def visualize_graph(output_file, graph):
     plt.title("Social Network Graph")
     plt.savefig(output_file)
     plt.show()
-
-
-# Example
-input_file = "s.xml"
-output_file = "social-network-graph.jpg"
-
-
-# Parse the XML to graph
-graph, posts, user_topics, post_topics, names = parse_xml_to_graph(input_file)
-
-
-# Visualization
-visualize_graph(output_file, graph)
-
-
-print(posts)
-print(user_topics)
-print(post_topics)
-print(names)
