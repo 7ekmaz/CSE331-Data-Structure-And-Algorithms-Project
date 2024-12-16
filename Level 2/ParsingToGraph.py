@@ -36,6 +36,13 @@ class Graph:
             in_degree += neighbors.count(node)
         return in_degree
 
+    def get_followers(self, node):
+        list_of_in_degree = []
+        for nodes, neighbors in self.adjacency_list.items():
+            if neighbors.count(node) != 0:
+                list_of_in_degree.append(nodes)
+        return list_of_in_degree
+
     def get_out_degree(self, node):
         return len(self.adjacency_list.get(node, []))
 
