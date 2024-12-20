@@ -1,3 +1,4 @@
+import argparse
 import matplotlib.pyplot as plt
 import networkx as nx
 
@@ -178,7 +179,7 @@ def visualize_graph(output_file, graph):
     plt.savefig(output_file)
     plt.show()
 
-
+"""
 # Example
 input_file = "s.xml"
 output_file = "social-network-graph.jpg"
@@ -196,3 +197,25 @@ print(posts)
 print(user_topics)
 print(post_topics)
 print(names)
+"""
+
+def main():
+    parser = argparse.ArgumentParser(description="XML Editor for Social Network Graphs")
+    parser.add_argument("command", choices=["draw"], help="Command to execute (e.g., draw)")
+    parser.add_argument("-i", "--input", required=True, help="Input XML file")
+    parser.add_argument("-o", "--output", required=True, help="Output file for the graph visualization")
+
+    args = parser.parse_args()
+
+    if args.command == "draw":
+        input_file = args.input
+        output_file = args.output
+        
+        # Parse the XML to graph
+        graph, posts, user_topics, post_topics, names = parse_xml_to_graph(input_file)
+        
+        # Visualization
+        visualize_graph(output_file, graph)
+
+if __name__ == "__main__":
+    main()
