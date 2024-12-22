@@ -95,8 +95,6 @@ def formatting(input_file):
             else:
                 if line == "\n":
                     continue
-                j = 0
-                
                 string=(" " * (indent+4))
                 string+=line
                 result.append(string)   
