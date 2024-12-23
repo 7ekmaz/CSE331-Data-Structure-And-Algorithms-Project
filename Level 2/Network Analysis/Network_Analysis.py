@@ -28,7 +28,9 @@ def mutual_followers(graph, users):
     for user in users:
         mutual.append(graph.get_followers(user))
     result = list(set.intersection(*map(set, mutual)))
-    return result if result else "No mutual followers"
+    if not result:
+            print("No Mutual Followers")
+    return result
 
 def suggest_users(graph, target_user):
     """

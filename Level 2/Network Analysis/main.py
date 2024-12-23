@@ -20,7 +20,7 @@ def main():
         if sys.argv[i] == "-i":
             input_file = sys.argv[i + 1]
         elif sys.argv[i] == "-ids":
-            user_ids = list(map(str.strip, sys.argv[i + 1].split()))
+            user_ids = list(map(str.strip, sys.argv[i + 1].split(sep=',')))
         elif sys.argv[i] == "-id":
             target_id = sys.argv[i + 1]
 
@@ -36,9 +36,10 @@ def main():
             print("Error: User IDs must be specified with -ids for mutual command.")
             sys.exit(1)
         mutual_users = mutual_followers(graph, user_ids)
-        print("Mutual users who follow all specified users:")
-        for user_id in mutual_users:
-            print(f"ID: {user_id}")
+        if(mutual_users):
+            print("Mutual users who follow all specified users:")
+            for user_id in mutual_users:
+                print(f"ID: {user_id}")
 
     elif command == "suggest":
         if not target_id:
