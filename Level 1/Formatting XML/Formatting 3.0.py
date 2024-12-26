@@ -102,9 +102,6 @@ def formatting(input_file):
     return result                
 
 def main():
-    x = formatting("7a7a.xml")  
-    for s in x:
-        print(s)
     if len(sys.argv) < 3:
         print("Usage:")
         print("  xml_editor format -i input_file.xml -o output_file.xml")
@@ -114,9 +111,14 @@ def main():
     if sys.argv[1] == "format":
         if len(sys.argv) == 6 and sys.argv[2] == "-i" and sys.argv[4] == "-o":
             input_file = sys.argv[3]
-            formatting(input_file)
+            output_file = sys.argv[5]
+            data = formatting(input_file)
+            with open(output_file,'w') as output:
+                for line in data:
+                    output.writelines(line) 
+                    output.writelines("\n") 
         else:
-            print("Usage: xml_editor compress -i input_file.xml -o output_file.xml")
+            print("Usage: xml_editor format -i input_file.xml -o output_file.xml")
             sys.exit(1)
 
 
