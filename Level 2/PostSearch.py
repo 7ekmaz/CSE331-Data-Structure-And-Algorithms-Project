@@ -1,6 +1,5 @@
 import argparse
 import ParsingToGraph # type: ignore
-graph, posts , user_topics ,post_topics = ParsingToGraph.parse_xml_to_graph(xml_file_name)
 #Word search function
 def wordSearch (word , posts):
     """
@@ -56,7 +55,11 @@ def main():
     # Check which command was called
     if args.command == 'search':
         xml_file_name = args.input
-        graph, posts, user_topics,post_topics = parse_xml_to_graph(xml_file_name)
+        results = ParsingToGraph.parse_xml_to_graph(xml_file_name)
+        graph = results[0]
+        posts = results[1]
+        user_topics = results[2]
+        post_topics = results[3]
         if args.word:
             wordSearch(args.word, posts)
         elif args.topic:
