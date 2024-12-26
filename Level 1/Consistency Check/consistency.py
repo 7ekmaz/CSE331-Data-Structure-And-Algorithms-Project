@@ -127,19 +127,34 @@ def fix_xml_consistency(xml_lines, errors):
             # Extract the tag name from the error message
             tag_name = error_msg.split("</")[1].split(">")[0]
 
-            # Locate content before the closing tag
+            # Locate the line with the closing tag
             closing_tag_line = line_num - 1
             content = fixed_lines[closing_tag_line].strip()
-            content_without_tag = content.replace(f"</{tag_name}>", "").strip()
 
-            
-             # Add an opening tag before the content
-            fixed_lines[closing_tag_line] = (
-            f"<{tag_name}>{content_without_tag}</{tag_name}>"
-            )
+            # Set how many lines to check before the closing tag for content
+            lines_to_check = 2
+
+            # Search up to 'lines_to_check' lines before the closing tag for content
+            for i in range(1, lines_to_check + 1):
+                previous_line = closing_tag_line - i
+                if previous_line < 0:
+                    break  # Don't go beyond the first line
+
+                content = fixed_lines[previous_line].strip()
+                if content:  # Found non-empty content
+                    # Add the opening tag before the found content
+                    fixed_lines[previous_line] = f"<{tag_name}> {content}"
+                    fixed_lines[closing_tag_line] = f"</{tag_name}>"
+                    break  # Stop once content is found and fixed
+            else:
+                # If no content found in the range, insert opening tag before closing tag
+                fixed_lines.insert(closing_tag_line, f"<{tag_name}>")
+
+            # Log the error fix
             error_log.append(
-            f"Added missing opening tag <{tag_name}> on line {line_num} for existing closing tag."
+                f"Added missing opening tag <{tag_name}> on line {line_num} for existing closing tag."
             )
+            
     return fixed_lines, error_log
 
 

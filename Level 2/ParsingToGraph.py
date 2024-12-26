@@ -1,3 +1,4 @@
+import argparse
 import matplotlib.pyplot as plt
 import networkx as nx
 
@@ -35,6 +36,13 @@ class Graph:
         for neighbors in self.adjacency_list.values():
             in_degree += neighbors.count(node)
         return in_degree
+
+    def get_followers(self, node):
+        list_of_in_degree = []
+        for nodes, neighbors in self.adjacency_list.items():
+            if neighbors.count(node) != 0:
+                list_of_in_degree.append(nodes)
+        return list_of_in_degree
 
     def get_out_degree(self, node):
         return len(self.adjacency_list.get(node, []))
@@ -171,7 +179,7 @@ def visualize_graph(output_file, graph):
     plt.savefig(output_file)
     plt.show()
 
-
+"""
 # Example
 input_file = "s.xml"
 output_file = "social-network-graph.jpg"
@@ -185,3 +193,32 @@ graph, posts, user_topics, post_topics, names = parse_xml_to_graph(input_file)
 visualize_graph(output_file, graph)
 
 
+<<<<<<< HEAD
+=======
+print(posts)
+print(user_topics)
+print(post_topics)
+print(names)
+"""
+
+def main():
+    parser = argparse.ArgumentParser(description="XML Editor for Social Network Graphs")
+    parser.add_argument("command", choices=["draw"], help="Command to execute (e.g., draw)")
+    parser.add_argument("-i", "--input", required=True, help="Input XML file")
+    parser.add_argument("-o", "--output", required=True, help="Output file for the graph visualization")
+
+    args = parser.parse_args()
+
+    if args.command == "draw":
+        input_file = args.input
+        output_file = args.output
+        
+        # Parse the XML to graph
+        graph, posts, user_topics, post_topics, names = parse_xml_to_graph(input_file)
+        
+        # Visualization
+        visualize_graph(output_file, graph)
+
+if __name__ == "__main__":
+    main()
+>>>>>>> 6f74734e315f5df1c972b00564ce01f6193cab78
