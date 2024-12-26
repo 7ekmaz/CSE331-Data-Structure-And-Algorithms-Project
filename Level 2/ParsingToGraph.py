@@ -185,7 +185,3 @@ graph, posts, user_topics, post_topics, names = parse_xml_to_graph(input_file)
 visualize_graph(output_file, graph)
 
 
-print(posts)
-print(user_topics)
-print(post_topics)
-print(names)
