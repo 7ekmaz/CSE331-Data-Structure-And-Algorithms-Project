@@ -14,7 +14,7 @@ def most_influencer(graph, names):
     most = max(followers, key=followers.get)
     return names[most], most 
 
-def most_active_user(graph, names): # 1st approach
+def most_active_user(graph, names): 
     activity = {}
     for node in graph.get_all_nodes():
         followers = set(graph.get_followers(node))

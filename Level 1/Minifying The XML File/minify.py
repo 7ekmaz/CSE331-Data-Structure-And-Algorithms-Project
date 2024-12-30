@@ -1,3 +1,4 @@
+import argparse
 def parse_xml(file_content):
     """
     Parses XML content and generates a simplified representation.
@@ -71,17 +72,19 @@ def  xml_editor_mini(input_file, output_file):
         print(f"Error: {e}")
 
 def main():
-    """
-    Main function to handle input/output paths and run the minification process.
-    """
-    # Replace these paths with your actual file paths
-    input_file = "sample2.xml"
-    output_file = "output.xml"
 
-    print("Minifying XML file...")
-    xml_editor_mini(input_file, output_file)
+    parser = argparse.ArgumentParser(description="Minify an XML")
+    parser.add_argument("action", choices=["mini"], help="Action to perform")
+    parser.add_argument("-i", "--input_file", required=True, help="Path to the input XML file")
+    parser.add_argument("-o", "--output_file", required=True, help="Path to save the minified XML file")
+
+    args = parser.parse_args()
+
+    if args.action == "mini":
+        print("Minifying XML file...")
+        xml_editor_mini(args.input_file, args.output_file)
 
 
-if __name__ == "__main__":
-    main()
+    if __name__ == "__main__":
+        main()
 
